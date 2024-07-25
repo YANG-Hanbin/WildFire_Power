@@ -16,9 +16,9 @@ costShutOff = optimalShutOff!(zstar; Ω_rv = Ω_rv);
 costTrivial = benchmarkTrivial!(; Ω_rv = Ω_rv);
 costOracle = benchmarkOracle!(; Ω_rv = Ω_rv);
 
-# costOracleDict = load("src/Experiments/benchmark/costOracleDict.jld2")["costOracleDict"]
-# costShutOffDict = load("src/Experiments/benchmark/costShutOffDict.jld2")["costShutOffDict"]
-# costTrivialDict = load("src/Experiments/benchmark/costTrivialDict.jld2")["costTrivialDict"]
+# costOracleDict = load("src/NumericalResults/benchmarks/costOracleDict.jld2")["costOracleDict"]
+# costShutOffDict = load("src/NumericalResults/benchmarks/costShutOffDict.jld2")["costShutOffDict"]
+# costTrivialDict = load("src/NumericalResults/benchmarks/costTrivialDict.jld2")["costTrivialDict"]
 
 # n = 20;m = 11;
 # costOracle = costOracleDict[n,m]
@@ -57,10 +57,13 @@ p = Plots.plot(x[5:15], y[5:15,1:3],
                 lw =2, bg="white", # ylims=(minimum(y[:,1:3]), maximum(y[:,1:3])),
                 xlab = "Index of scenarios", 
                 ylab = "Total Cost",
-                ylim = [-500,13000]
+                ylim = [-500,13000],
+                xguidefont=font(15,"Times New Roman"), yguidefont=font(15,"Times New Roman"), xtickfontsize=13, ytickfontsize=13, legendfontsize=11, yformatter=y->string(Int(y)),
+                tickfont=font("Computer Modern"),
+                legendfont=font("Times New Roman")
                 )
 # hline!(mean(y[:,1:3], dims=1), label = ["meanWS" "meanSO" "meanDET"], line=(2, [:solid :solid :solid], 0.5, [:blue :orange :green]))
 # https://docs.juliahub.com/UnitfulRecipes/KPSlU/1.0.0/examples/2_Plots/#
-savefig(p, "src/Experiments/benchmarks/benchmark.pdf")
+savefig(p, "src/NumericalResults/benchmarks/benchmark.pdf")
 
 

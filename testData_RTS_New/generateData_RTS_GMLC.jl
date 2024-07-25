@@ -18,7 +18,7 @@ WFPI_Info = WFPI_file[:, [:From_Bus, :To_Bus, :Mean]];
 
 
 T = 24;
-Ω = 101; ## Int
+Ω = 30; ## Int
 (indexSets, paramOPF, paramDemand, multiLines) = prepareIndexSets(network_data, T, Ω);
 
 
@@ -42,8 +42,13 @@ T = 24;
 prob = Dict{Int64, Float64}();
 for ω in 1:(Ω - 1) 
     prob[ω] = round(0.1/(Ω - 1), digits = 4);
+    prob[ω] = 1/Ω
 end
 prob[Ω] = .9
+
+for ω in 1:Ω
+    prob[ω] = 1/Ω
+end
 
 save("testData_RTS_New/indexSets.jld2", "indexSets", indexSets)
 save("testData_RTS_New/paramOPF.jld2", "paramOPF", paramOPF)
@@ -52,7 +57,6 @@ save("testData_RTS_New/Ω_rv.jld2", "Ω_rv", Ω_rv)
 save("testData_RTS_New/prob.jld2", "prob", prob)
 # save("testData_RTS_New/wholeSpace.jld2", "wholeSpace", wholeSpace)
 # @load "testData_RTS_New/wholeSpace.jld2" wholeSpace
-
 
 
 Ω_rvList = Dict()
