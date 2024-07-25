@@ -1,6 +1,8 @@
 #############################################################################################
 ####################################    Without Parallel   ##################################
 #############################################################################################
+using Pkg
+Pkg.activate(".")
 using JuMP, Gurobi, PowerModels
 using Statistics, StatsBase, Random, Dates, Distributions
 using Distributed, ParallelDataTransfer

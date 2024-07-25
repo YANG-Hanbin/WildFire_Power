@@ -67,7 +67,7 @@ function prepareIndexSets(  network_data::Dict{String, Any},
                 demand = network_data["load"][i]["pd"] * 1.2
             elseif 15 ≤ t ≤ 20  
                 demand = network_data["load"][i]["pd"] * 1.35 
-            elseif 21 ≤ t ≤ 24   
+            elseif 21 ≤ t ≤ T   
                 demand = network_data["load"][i]["pd"] * 1.2
             end   
             Demand[t][d] = demand
@@ -198,7 +198,7 @@ end
 
 
 function prepareScenarios( ;period_span::Int64 = 1, 
-                            T::Int64 = 48, 
+                            T::Int64 = 24, 
                             Ω::Int64 = 5, 
                             indexSets::IndexSets = indexSets, line_id_bus::Dict = line_id_bus,
                             bus_id_location::Dict = bus_id_location, line_location_id::Dict = line_location_id
@@ -225,7 +225,7 @@ function prepareScenarios( ;period_span::Int64 = 1,
     in_L = indexSets.in_L;
     out_L = indexSets.out_L;
     for ω in 1:Ω 
-        τ = 24
+        τ = T
 
         ub = Dict{Int64, Int64}()
         ug = Dict{Int64, Int64}()

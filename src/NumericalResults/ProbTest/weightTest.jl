@@ -39,8 +39,6 @@ save("src/NumericalResults/ProbTest/gurobiResultList.jld2", "gurobiResultList", 
 
 # gurobiResultList = load("src/NumericalResults/ProbTest/gurobiResultList.jld2")["gurobiResultList"]
 
-
-
 ## ------------------------------  Compute total costs by using different decisions  ----------------------------- ##
 ## scenario size = 200
 totalCost = Dict{Float64, Float64}()
@@ -177,7 +175,6 @@ end
 alpha = 0.3
 round((sum(costDistribution[alpha, ω].damageCost for ω in 1:5000) - costDistribution[alpha, 1090].damageCost * 103)/(5000 - 103), digits = 1)
 round((sum(costDistribution[alpha, ω].loadShedding for ω in 1:5000) - costDistribution[alpha, 1090].loadShedding * 103)/(5000 - 103), digits = 1)
-
 
 
 

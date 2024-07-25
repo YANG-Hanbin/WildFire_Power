@@ -1,6 +1,4 @@
 # load packages 
-using Pkg
-Pkg.activate(".")
 using JuMP
 using JLD2, FileIO
 using PowerModels
@@ -15,6 +13,8 @@ paramDemand = load("data/testData_RTS/paramDemand.jld2")["paramDemand"]
 
 gurobiResultList = load("src/NumericalResults/ProbTest/gurobiResultList.jld2")["gurobiResultList"];
 Solution = gurobiResultList[.7,1];
+Solution = gurobiResultList[.7,"exg"];
+Solution = gurobiResultList[.7,"end"];
 solution = Solution.first_state_variable;
 demandSatisfication = Solution.x;
 
@@ -27,9 +27,10 @@ function scenarioProcessing(; Ω_rv::Dict{Int64, RandomVariables} = Ω_rv,
                                     network_data::Dict{String, Any} = network_data, 
                                     indexSets::IndexSets = indexSets,
                                     demandSatisfication = demandSatisfication,
-                                    solution::Dict{Symbol, JuMP.Containers.DenseAxisArray{Float64, 2, Ax, L} where {Ax, L<:Tuple{JuMP.Containers._AxisLookup, JuMP.Containers._AxisLookup}}} = solution
+                                    solution::Dict{Symbol, JuMP.Containers.DenseAxisArray{Float64, 2, Ax, L} where {Ax, L<:Tuple{JuMP.Containers._AxisLookup, JuMP.Containers._AxisLookup}}} = solution, 
+                                    T::Int64 = 24
                                     )
-    periods = 1:24
+    periods = 1:T
     b_index = keys(Ω_rv[1].ub)
     g_index = keys(Ω_rv[1].ug)
     l_index = keys(Ω_rv[1].ul)
@@ -89,7 +90,7 @@ function scenarioProcessing(; Ω_rv::Dict{Int64, RandomVariables} = Ω_rv,
 
     network_data["dcline"]=Dict{String,Any}()
 
-    mn_data = replicate(network_data, 24)
+    mn_data = replicate(network_data, T)
 
     for (nwid,nw) in mn_data["nw"]
         t = parse(Int,nwid)
@@ -187,7 +188,7 @@ function power_risk_mn_plot(; mn_data::Dict{String, Any} = mn_data, risk_max::Di
     p=powerplot(mn_data, # mn_data["nw"]["13"]
                 width=200,height=200,
                 show_flow=false,
-                fixed=true, components=["bus","branch"],
+                fixed=true, components=["bus","branch","generate"],
                 branch_data="power_risk", branch_color=cs, branch_data_type="quantitative",
                 gen_data="power_risk", gen_color=cs, gen_data_type="quantitative",
                 bus_data="power_risk", bus_color=cs, bus_data_type="quantitative",
@@ -195,25 +196,27 @@ function power_risk_mn_plot(; mn_data::Dict{String, Any} = mn_data, risk_max::Di
                 # gen_color=["#d5d5d5"],
                 # bus_color=["#d5d5d5"],
                 connector_color="#d5d5d5",
-                load_color=["#d5d5d5"],
+                load_color=[:blue],
                 # bus_size = 25, gen_size = 20, branch_size = 3, connector_size = 1
                 node_size=12.5, branch_size=2, connector_size=0.5
                 )
     
-    p.layer[1]["encoding"]["color"]["scale"]["domainMax"]=maximum([risk_max[:line], risk_max[:gen], risk_max[:bus]])
+    p.layer[1]["layer"][1]["encoding"]["color"]["scale"]["domainMax"]=maximum([risk_max[:line], risk_max[:gen], risk_max[:bus]])
     p.layer[3]["encoding"]["color"]["scale"]["domainMax"]=maximum([risk_max[:line], risk_max[:gen], risk_max[:bus]])
     p.layer[4]["encoding"]["color"]["scale"]["domainMax"]=maximum([risk_max[:line], risk_max[:gen], risk_max[:bus]])
-    p.layer[1]["encoding"]["color"]["scale"]["domainMin"]=0
+    p.layer[1]["layer"][1]["encoding"]["color"]["scale"]["domainMin"]=0
     p.layer[3]["encoding"]["color"]["scale"]["domainMin"]=0
     p.layer[4]["encoding"]["color"]["scale"]["domainMin"]=0
-    p.layer[1]["encoding"]["color"]["legend"]=Dict("gradientLength"=>100,"title"=>"Line Risk")
+    p.layer[1]["layer"][1]["encoding"]["color"]["legend"]=Dict("gradientLength"=>100,"title"=>"Line Risk")
     p.layer[3]["encoding"]["color"]["legend"]=Dict("gradientLength"=>100,"title"=>"Bus Risk")
     p.layer[4]["encoding"]["color"]["legend"]=Dict("gradientLength"=>100,"title"=>"Gen Risk")
 
-    p.layer[1]["encoding"]["color"]["legend"]=Dict("gradientLength"=>150,"title"=>"Risk Value")
+    p.layer[1]["layer"][1]["encoding"]["color"]["legend"]=Dict("gradientLength"=>150,"title"=>"Risk Value")
     p.layer[2]["encoding"]["color"]["legend"]=false # connector
     p.layer[3]["encoding"]["color"]["legend"]=false # bus
     p.layer[4]["encoding"]["color"]["legend"]=false # gen
+    # p.layer[5]["encoding"]["color"]["legend"]=false # load
+
     return p
 end
 
@@ -245,23 +248,23 @@ function power_shutoff_mn_plot(; mn_data::Dict{String, Any} = mn_data, AllCompon
     if AllComponents
         p=powerplot( mn_data, # mn_data["nw"]["12"],
                 width=200,height=200,
-                fixed=true, components=["bus","branch"],
+                fixed=true, components=["bus", "branch", "load", "gen"],
                 branch_data= "Status", branch_color=[:lightgrey, :green], branch_data_type="nominal", 
                 gen_data= "Status", gen_color=[:lightgrey, "#0047AB"], gen_data_type="nominal", 
                 # bus_data= "ShutOff", bus_color=[:lightgreen, :lightgrey], bus_data_type="nominal",
-                bus_data= "Load_Shed", bus_color=[:lightgreen, "#DB492A"], bus_data_type="quantitative",
+                bus_data= "Status", bus_color=["#0047AB"], bus_data_type="nominal",
+                load_data= "Load_Shed", load_color=[:lightgreen, "#DB492A"], load_data_type="quantitative",
                 connector_color="#d5d5d5",
                 # bus_size = 25, gen_size = 20, branch_size = 3, connector_size = 1
                 node_size=12.5, branch_size=2, connector_size=0.5
                 )
-        p.layer[3]["encoding"]["color"]["scale"]["domainMax"]=100
-        p.layer[3]["encoding"]["color"]["scale"]["domainMin"]=0
-
-        p.layer[1]["encoding"]["color"]["legend"]=Dict("gradientLength"=>100,"title"=>"Branch Shut Off")
+        p.layer[1]["layer"][1]["encoding"]["color"]["legend"]=Dict("gradientLength"=>100,"title"=>"Branch Shut Off")
         p.layer[4]["encoding"]["color"]["legend"]=Dict("gradientLength"=>100,"title"=>"Gen Shut Off")
-        p.layer[3]["encoding"]["color"]["legend"]=Dict("gradientLength"=>100,"title"=>"Pct. Load-shed")
+        p.layer[3]["encoding"]["color"]["legend"]=false
         p.layer[2]["encoding"]["color"]["legend"]=false # connector
-
+        p.layer[5]["encoding"]["color"]["legend"]=Dict("gradientLength"=>100,"title"=>"Pct. Load-shed") # load
+        p.layer[5]["encoding"]["color"]["scale"]["domainMax"]=100
+        p.layer[5]["encoding"]["color"]["scale"]["domainMin"]=0
     else
         p=powerplot(mn_data,
                 width=200,height=200,
@@ -270,15 +273,18 @@ function power_shutoff_mn_plot(; mn_data::Dict{String, Any} = mn_data, AllCompon
                 branch_data="ShutOff", branch_color=[:lightgrey, :green], branch_data_type="nominal",
                 gen_data= :gen_type, gen_data_type = "nominal", gen_color = colorscheme2array(ColorSchemes.colorschemes[:seaborn_deep]), # tableau_green_blue_white
                 bus_data= "load_type", bus_data_type = "nominal", bus_color = [:Red, :grey, :orange, :green],
+                load_color=[:lightgreen, "#DB492A"], 
                 connector_color="#d5d5d5",
                 # bus_size = 25, gen_size = 20, branch_size = 3, connector_size = 1
                 node_size=12.5, branch_size=2, connector_size=0.5
                 )
 
-        p.layer[1]["encoding"]["color"]["legend"]=Dict("gradientLength"=>100,"title"=>"Branch Shut Off")
+        p.layer[1]["layer"][1]["encoding"]["color"]["legend"]=Dict("gradientLength"=>100,"title"=>"Branch Shut Off")
         p.layer[4]["encoding"]["color"]["legend"]=Dict("gradientLength"=>100,"title"=>"Gen Priority")
         p.layer[3]["encoding"]["color"]["legend"]=Dict("gradientLength"=>100,"title"=>"Load Priority")
         p.layer[2]["encoding"]["color"]["legend"]=false # connector
+        p.layer[5]["encoding"]["color"]["legend"]=false # load
+
     end
     # p.layer[1]["encoding"]["color"]["scale"]["domainMax"]=risk_max
     # p.layer[5]["encoding"]["color"]["scale"]["domainMax"]=risk_max
@@ -292,8 +298,9 @@ function power_shutoff_mn_plot(; mn_data::Dict{String, Any} = mn_data, AllCompon
     return p
 end
 
+T = 24
 
-(risk_max, mn_data) = scenarioProcessing(; Ω_rv = Ω_rv, solution = solution, network_data = network_data);
+(risk_max, mn_data) = scenarioProcessing(; Ω_rv = Ω_rv, solution = solution, network_data = network_data, T = T);
 # (risk_max, mn_data1) = scenarioProcessing(; Ω_rv = Ω_rv, solution = solution1, demandSatisfication = demandSatisfication1, network_data = network_data);
 # (risk_max, mn_data2) = scenarioProcessing(; Ω_rv = Ω_rv, solution = solution2, demandSatisfication = demandSatisfication2, network_data = network_data);
 
